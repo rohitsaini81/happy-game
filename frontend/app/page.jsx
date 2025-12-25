@@ -342,13 +342,3 @@ export const december2025 = {
 };
 
 
-
-export function Marquee({ children }) {
-  return (
-    <div className="overflow-hidden whitespace-nowrap">
-      <div className="inline-block animate-marquee">
-        {children}
-      </div>
-    </div>
-  );
-}
