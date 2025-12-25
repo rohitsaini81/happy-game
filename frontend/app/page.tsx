@@ -108,8 +108,9 @@ export function HeroSection() {
 
         {/* Marquee-style text (static, clean version) */}
 
-        <div className="w-full max-w-5xl bg-blue-900/60 rounded-md px-3 py-2 text-xs text-slate-200">
-          <marquee>
+        <div className="w-full max-w-5xl bg-blue-900/60 overflow-hidden rounded-md px-3 py-2 text-xs text-slate-200">
+          {/* <marquee> */}
+          <p className="marquee w-full  ">
             <b>SATTA KING, SATTA KING RECORD, SATTA KING RECORD CHART,PATNA CITY SATTA CHART, SATTA KING ONLINE RESULT, JAY BHOLE  SATTA  ,
 
               BIKANER SUPER SATTA  ,
@@ -185,7 +186,9 @@ export function HeroSection() {
               GALI SATTA  ,
 
               SATTA KING FAST</b>
-          </marquee>        </div>
+          {/* </marquee>       */}
+          </p>
+            </div>
 
         {/* Online badge */}
         <span className="mt-2 inline-block bg-indigo-400 text-white text-xs px-3 py-1 rounded-full">
@@ -338,3 +341,14 @@ export const december2025 = {
   ],
 };
 
+
+
+export function Marquee({ children }) {
+  return (
+    <div className="overflow-hidden whitespace-nowrap">
+      <div className="inline-block animate-marquee">
+        {children}
+      </div>
+    </div>
+  );
+}
