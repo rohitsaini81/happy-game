@@ -9,16 +9,16 @@ export default async function Home() {
 
   const data = [sg, gb, fd];
   console.log(data)
-  const results = [
-    { name: "JAY BHOLE", time: "01:15 AM", yesterday: "08", today: "01" },
-    { name: "BIKANER SUPER", time: "02:20 AM", yesterday: "17", today: "33" },
-    { name: "DESAWER", time: "05:00 AM", yesterday: "34", today: "19" },
-    { name: "PROFIT BAZZAR", time: "11:55 AM", yesterday: "84", today: "87" },
-    { name: "HYDERABAD DAY", time: "12:30 PM", yesterday: "14", today: "50" },
-    { name: "YAMUNA CITY", time: "01:10 PM", yesterday: "50", today: "05" },
-    { name: "KUWAIT CITY", time: "01:30 PM", yesterday: "50", today: "51" },
-    { name: "A1 SADAR BAZAR", time: "01:30 PM", yesterday: "59", today: "63" },
-  ];
+  // const results = [
+  //   { name: "JAY BHOLE", time: "01:15 AM", yesterday: "08", today: "01" },
+  //   { name: "BIKANER SUPER", time: "02:20 AM", yesterday: "17", today: "33" },
+  //   { name: "DESAWER", time: "05:00 AM", yesterday: "34", today: "19" },
+  //   { name: "PROFIT BAZZAR", time: "11:55 AM", yesterday: "84", today: "87" },
+  //   { name: "HYDERABAD DAY", time: "12:30 PM", yesterday: "14", today: "50" },
+  //   { name: "YAMUNA CITY", time: "01:10 PM", yesterday: "50", today: "05" },
+  //   { name: "KUWAIT CITY", time: "01:30 PM", yesterday: "50", today: "51" },
+  //   { name: "A1 SADAR BAZAR", time: "01:30 PM", yesterday: "59", today: "63" },
+  // ];
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col items-center px-4 py-6">
