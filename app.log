@@ -1,0 +1,27 @@
+2026-01-23 12:27:48,681 - INFO - Error fetching games: relation "games" does not exist
+LINE 3:                 FROM games
+                             ^
+
+2026-01-23 12:27:56,914 - INFO - Error fetching games: relation "games" does not exist
+LINE 3:                 FROM games
+                             ^
+
+2026-01-23 12:30:10,362 - INFO - Fetched 4 games.
+2026-01-23 12:33:09,854 - INFO - Fetched 4 games.
+2026-01-23 12:33:55,025 - INFO - Fetched 4 games.
+2026-01-23 12:37:27,637 - INFO - Fetched 4 games.
+2026-01-23 12:39:40,640 - INFO - Fetched 4 games.
+2026-01-23 12:42:01,613 - INFO - Fetched 4 games.
+2026-01-23 12:43:52,848 - INFO - Fetched 4 games.
+2026-01-23 12:44:38,236 - INFO - Fetched 4 games.
+2026-01-23 12:45:50,501 - INFO - Fetched 4 games.
+2026-01-23 12:47:01,571 - INFO - Fetched 4 games.
+2026-01-23 12:47:22,663 - INFO - Fetched 4 games.
+2026-01-23 12:47:54,322 - INFO - Fetched 4 games.
+2026-01-23 12:51:22,896 - INFO - Fetched 4 games.
+2026-01-23 12:51:49,411 - INFO - Fetched 4 games.
+2026-01-23 12:53:55,357 - INFO - Fetched 4 games.
+2026-01-23 12:54:04,675 - INFO - Game result inserted successfully.
+2026-01-23 13:02:32,928 - INFO - Fetched 4 games.
+2026-01-23 13:08:14,180 - INFO - Fetched 4 games.
+2026-01-23 13:08:34,341 - INFO - Game result inserted successfully.
