@@ -1,4 +1,4 @@
-import {fetch_result, fetchTodayYesterdayResult} from "./api/chart.js"
+import {fetch_result, fetch_result_by_month, fetchTodayYesterdayResult} from "./api/chart.js"
 
 export default async function Home() {
 
@@ -6,23 +6,13 @@ export default async function Home() {
   const sg = await fetchTodayYesterdayResult('SHREE_GANESH').then((res)=>res.json());
   const gb = await fetchTodayYesterdayResult('GHAZIABAD').then((res)=>res.json());
   const fd = await fetchTodayYesterdayResult('FARIDABAD').then((res)=>res.json());
-
+  const january = await fetch_result_by_month('', 2026, 1).then(data=>data.json())
+  
   const data = [sg, gb, fd];
-  console.log(data)
-  // const results = [
-  //   { name: "JAY BHOLE", time: "01:15 AM", yesterday: "08", today: "01" },
-  //   { name: "BIKANER SUPER", time: "02:20 AM", yesterday: "17", today: "33" },
-  //   { name: "DESAWER", time: "05:00 AM", yesterday: "34", today: "19" },
-  //   { name: "PROFIT BAZZAR", time: "11:55 AM", yesterday: "84", today: "87" },
-  //   { name: "HYDERABAD DAY", time: "12:30 PM", yesterday: "14", today: "50" },
-  //   { name: "YAMUNA CITY", time: "01:10 PM", yesterday: "50", today: "05" },
-  //   { name: "KUWAIT CITY", time: "01:30 PM", yesterday: "50", today: "51" },
-  //   { name: "A1 SADAR BAZAR", time: "01:30 PM", yesterday: "59", today: "63" },
-  // ];
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col items-center px-4 py-6">
-      <HeroSection gb={34} hb={22} />
+      <HeroSection gb={gb.today || 0} hb={0} />
       {/* Header */}
       <div className="w-full max-w-3xl text-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800">SATTA KING</h1>
@@ -67,7 +57,7 @@ export default async function Home() {
           </div>
         ))}
       </div>
-      <CalendarChart data={december2025} />;
+      <CalendarChart data={january || december2025} />;
     </div>
   );
 }
@@ -252,13 +242,16 @@ export function HeroSection({hb, gb}) {
 
 
 export function CalendarChart({ data }) {
+  const chartData = data
+  console.log(chartData)
+
   return (
     <section className="w-full bg-slate-100 px-3 py-6">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
 
         {/* Header */}
         <div className="bg-blue-700 text-white text-center py-3 font-semibold">
-          {data.month} – Record Chart
+          {chartData.month} – Record Chart
         </div>
 
         {/* Column Headers */}
@@ -268,7 +261,7 @@ export function CalendarChart({ data }) {
           </div>
 
           <div className="flex flex-1">
-            {data.columns.map((col, i) => (
+            {chartData.columns.map((col, i) => (
               <div
                 key={i}
                 className="flex-1 px-2 py-2 text-center border-l"
@@ -283,7 +276,7 @@ export function CalendarChart({ data }) {
 
         {/* Rows */}
         <div className="max-h-[70vh] overflow-y-auto">
-          {data.rows.map((row, i) => (
+          {chartData.rows.map((row, i) => (
             <div
               key={i}
               className="flex text-sm border-b last:border-none"
@@ -311,6 +304,10 @@ export function CalendarChart({ data }) {
     </section>
   );
 }
+
+
+
+
 
 
 

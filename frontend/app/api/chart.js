@@ -152,3 +152,127 @@ export const fetchGames = async () => {
     )
   }
 }
+
+
+// export const fetch_result_by_month = async (
+//   gameCode,
+//   year,
+//   month
+// ) => {
+//   try {
+//     const params = [year, month]
+//     let gameFilter = ''
+
+//     if (gameCode) {
+//       gameFilter = 'AND h.code = $3'
+//       params.push(gameCode)
+//     }
+
+//     const query = `
+//       SELECT
+//         h.id,
+//         h.result_date,
+//         h.formal_name,
+//         h.code,
+//         h.result
+//       FROM "happy-game-result" h
+//       WHERE EXTRACT(YEAR FROM h.result_date) = $1
+//         AND EXTRACT(MONTH FROM h.result_date) = $2
+//         ${gameFilter}
+//       ORDER BY h.result_date;
+//     `
+
+//     const result = await pool.query(query, params)
+//     return NextResponse.json(result.rows)
+//   } catch (error) {
+//     console.error('fetch_result_by_month error:', error)
+//     return NextResponse.json(
+//       { error: 'Database error' },
+//       { status: 500 }
+//     )
+//   }
+// }
+
+
+
+export const fetch_result_by_month = async (gameCode, year, month) => {
+  try {
+    const params = [year, month]
+    let gameFilter = ''
+
+    if (gameCode) {
+      gameFilter = 'AND h.code = $3'
+      params.push(gameCode)
+    }
+
+    const query = `
+      SELECT
+        h.result_date,
+        h.formal_name,
+        h.result
+      FROM "happy-game-result" h
+      WHERE EXTRACT(YEAR FROM h.result_date) = $1
+        AND EXTRACT(MONTH FROM h.result_date) = $2
+        ${gameFilter}
+      ORDER BY h.result_date, h.formal_name;
+    `
+
+    const result = await pool.query(query, params)
+    const rowsData = result.rows
+
+    if (!rowsData || rowsData.length === 0) {
+      return NextResponse.json({
+        month: `${month}-${year}`,
+        columns: [],
+        rows: []
+      })
+    }
+
+    // 1️⃣ Get unique game names in the order they appear
+    const columns = Array.from(new Set(rowsData.map(r => r.formal_name)))
+
+    // 2️⃣ Group by date
+    const rowsMap = {}
+    rowsData.forEach(r => {
+      if (!r.result_date || !r.formal_name) return
+
+      const d = new Date(r.result_date)
+      if (isNaN(d)) return
+
+      // format as dd-mm-yyyy
+      const dateKey = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
+
+      if (!rowsMap[dateKey]) {
+        rowsMap[dateKey] = {}
+        columns.forEach(col => { rowsMap[dateKey][col] = null })
+      }
+
+      rowsMap[dateKey][r.formal_name] = r.result != null ? String(r.result) : null
+    })
+
+    // 3️⃣ Convert to array sorted by date
+    const rows = Object.entries(rowsMap)
+      .sort(([a], [b]) => {
+        const [dayA, monthA, yearA] = a.split('-').map(Number)
+        const [dayB, monthB, yearB] = b.split('-').map(Number)
+        return new Date(yearA, monthA - 1, dayA) - new Date(yearB, monthB - 1, dayB)
+      })
+      .map(([date, valuesMap]) => ({
+        date,
+        values: columns.map(col => valuesMap[col] != null ? valuesMap[col] : "—")
+      }))
+
+    // 4️⃣ Build final object like your december2025 example
+    return NextResponse.json({
+      month: `${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`,
+      columns,
+      rows
+    })
+  } catch (error) {
+    console.error('fetch_result_by_month error:', error)
+    return NextResponse.json(
+      { error: 'Database error' },
+      { status: 500 }
+    )
+  }
+}
