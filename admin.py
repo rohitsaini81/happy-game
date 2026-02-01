@@ -8,7 +8,7 @@ from datetime import date
 def submit_form():
     game = game_var.get()
     result = result_entry.get()
-
+    result_date_str = date_var.get()
     if game == "Select a game":
         messagebox.showerror("Error", "Please select a game.")
         return
@@ -20,6 +20,25 @@ def submit_form():
             "Result value is required."
         )
         return
+
+    # Date is required
+    if not result_date_str:
+        messagebox.showwarning(
+            "Validation Error",
+            "Result date is required."
+        )
+        return
+
+    # Validate date format
+    try:
+        result_date = date.fromisoformat(result_date_str)
+    except ValueError:
+        messagebox.showwarning(
+            "Validation Error",
+            "Date must be in YYYY-MM-DD format."
+        )
+        return
+
 
     # Must be an integer (no text, no decimals)
     if not result.isdigit():
@@ -57,8 +76,15 @@ def submit_form():
     game = ast.literal_eval(game)
 
     print(game)
-    today = date.today()
-    create_game_result(result, game['name'], today, game['id'], game['code_name'])
+    # today = date.today()
+    # create_game_result(result, game['name'], today, game['id'], game['code_name'])
+    create_game_result(
+        result,
+        game['name'],
+        result_date,
+        game['id'],
+        game['code_name']
+    )
 
 
     messagebox.showinfo("Success", "Game :"+game['name'] + " \nresult :"+str(result))
@@ -148,6 +174,16 @@ ttk.OptionMenu(card, game_var, game_var.get(), *game_options).pack(fill="x")
 ttk.Label(card, text="Result").pack(anchor="w", pady=(15, 5))
 result_entry = ttk.Entry(card)
 result_entry.pack(fill="x")
+
+# Date input
+ttk.Label(card, text="Result Date (YYYY-MM-DD)").pack(anchor="w", pady=(15, 5))
+
+date_var = tk.StringVar()
+date_var.set(date.today().isoformat())  # default = today
+
+date_entry = ttk.Entry(card, textvariable=date_var)
+date_entry.pack(fill="x")
+
 
 # Description
 ttk.Label(card, text="Description (optional)").pack(anchor="w", pady=(15, 5))

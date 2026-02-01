@@ -12,7 +12,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col items-center px-4 py-6">
-      <HeroSection gb={gb.today || 0} hb={0} />
+      <HeroSection gb={gb.today || "WAIT"} hb={"WAIT"} />
       {/* Header */}
       <div className="w-full max-w-3xl text-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800">SATTA KING</h1>
