@@ -1,8 +1,13 @@
 import {fetch_result_by_month, fetchTodayYesterdayResult, fetchGames} from "./api/chart.js"
 import Link from "next/link";
 import SignInPopup from "./components/signin-popup";
+import { cookies } from "next/headers";
+import { getSessionUser } from "@/app/lib/session";
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const sessionUser = getSessionUser(cookieStore);
+  const isLoggedIn = Boolean(sessionUser);
 
   const games = await fetchGames().then((res) => res.json());
   const gameCodes = (games || []).map((game) => game.code);
@@ -49,6 +54,7 @@ export default async function Home() {
           secondToday?.game ? gameNameMap[secondToday.game] : "GHAZIABAD"
         }
         secondGameValue={secondToday?.today ?? "WAIT"}
+        sessionUser={sessionUser}
       />
       {/* Header */}
       <div className="w-full max-w-3xl text-center mb-6">
@@ -114,7 +120,7 @@ export default async function Home() {
           />
         </svg>
       </a>
-      <SignInPopup />
+      {!isLoggedIn ? <SignInPopup /> : null}
     </div>
   );
 }
@@ -126,6 +132,7 @@ export function HeroSection({
   firstGameValue,
   secondGameName,
   secondGameValue,
+  sessionUser,
 }) {
   const navItems = [
     { label: "SATTA KING", href: "/", active: true },
@@ -165,12 +172,24 @@ export function HeroSection({
               )
             ))}
           </div>
-          <Link
-            href="/login"
-            className="w-full shrink-0 rounded-lg bg-emerald-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-emerald-600 sm:w-auto"
-          >
-            Sign In
-          </Link>
+          {sessionUser ? (
+            <Link
+              href="/profile"
+              aria-label="Go to profile"
+              className="flex w-full shrink-0 items-center justify-center sm:w-auto"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 text-sm font-bold text-white shadow-md ring-2 ring-white/80 transition hover:scale-105">
+                {(sessionUser.name || sessionUser.email || "U").charAt(0).toUpperCase()}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="w-full shrink-0 rounded-lg bg-emerald-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-emerald-600 sm:w-auto"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
 
