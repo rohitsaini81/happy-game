@@ -86,6 +86,7 @@ export default function LoginForm() {
 
           <button
             type="button"
+            onClick={() => window.location.assign("/api/auth/google")}
             className="rounded-lg border border-[#db4437] bg-[#db4437] py-2.5 text-sm font-semibold text-white transition hover:bg-[#c7372d]"
           >
             Continue with Google
