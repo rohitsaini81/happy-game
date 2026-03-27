@@ -13,6 +13,9 @@ export async function loginAction(_prevState, formData) {
 
   const fieldErrors = {};
   if (!email) fieldErrors.email = "Email is required";
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = "Enter a valid email";
+  }
   if (!password) fieldErrors.password = "Password is required";
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -44,40 +47,48 @@ export async function loginAction(_prevState, formData) {
     };
   }
 
-  const user = await findUserByEmail(email);
-  if (!user?.password_hash) {
-    return { ...initialState, ok: false, message: "Invalid email or password." };
+  try {
+    const user = await findUserByEmail(email);
+    if (!user?.password_hash) {
+      return { ...initialState, ok: false, message: "Invalid email or password." };
+    }
+
+    if (user.is_active === false) {
+      return { ...initialState, ok: false, message: "Your account is inactive." };
+    }
+
+    const validPassword = await verifyPassword(password, user.password_hash);
+    if (!validPassword) {
+      return { ...initialState, ok: false, message: "Invalid email or password." };
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const sessionUser = toSessionUser(user);
+    const token = signJwt(
+      {
+        ...sessionUser,
+        iat: now,
+        exp: now + 60 * 60 * 24 * 7,
+      },
+      jwtSecret
+    );
+
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    cookieStore.set("admin_auth", "", { path: "/", maxAge: 0 });
+
+    redirect("/profile");
+  } catch {
+    return {
+      ...initialState,
+      ok: false,
+      message: "Unable to log in right now. Please try again.",
+    };
   }
-
-  if (user.is_active === false) {
-    return { ...initialState, ok: false, message: "Your account is inactive." };
-  }
-
-  const validPassword = await verifyPassword(password, user.password_hash);
-  if (!validPassword) {
-    return { ...initialState, ok: false, message: "Invalid email or password." };
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const sessionUser = toSessionUser(user);
-  const token = signJwt(
-    {
-      ...sessionUser,
-      iat: now,
-      exp: now + 60 * 60 * 24 * 7,
-    },
-    jwtSecret
-  );
-
-  cookieStore.set("session", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-
-  cookieStore.set("admin_auth", "", { path: "/", maxAge: 0 });
-
-  redirect("/profile");
 }

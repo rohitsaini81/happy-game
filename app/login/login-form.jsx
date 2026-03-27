@@ -27,11 +27,11 @@ export default function LoginForm() {
 
         <form action={formAction} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-700">Email / Admin Username</label>
+            <label className="text-sm font-semibold text-slate-700">Email Username</label>
             <input
               name="email"
               autoComplete="username"
-              type="text"
+              type="email"
               placeholder="Type email"
             className="mt-1.5 w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
             />
