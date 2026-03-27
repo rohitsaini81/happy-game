@@ -23,7 +23,7 @@ export default async function ProfilePage() {
     <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-100 px-4 py-10">
       <div className="mx-auto w-full max-w-2xl rounded-2xl border border-emerald-200 bg-white p-6 shadow-xl shadow-emerald-100/70 sm:p-8">
         <h1 className="text-2xl font-bold text-emerald-700">Profile</h1>
-        <p className="mt-1 text-sm text-slate-600">Google authenticated user details</p>
+        <p className="mt-1 text-sm text-slate-600">Logged-in user details</p>
 
         <div className="mt-6 flex items-center gap-4">
           {user.picture ? (
@@ -45,7 +45,10 @@ export default async function ProfilePage() {
 
         <div className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
           <div>
-            <span className="font-semibold">Google ID:</span> {user.sub || "N/A"}
+            <span className="font-semibold">User ID:</span> {user.id || "N/A"}
+          </div>
+          <div>
+            <span className="font-semibold">Points:</span> {user.points ?? "N/A"}
           </div>
           <div>
             <span className="font-semibold">Issued At:</span>{" "}

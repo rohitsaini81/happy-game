@@ -9,20 +9,23 @@ export default async function Home() {
   const sessionUser = getSessionUser(cookieStore);
   const isLoggedIn = Boolean(sessionUser);
 
-  const games = await fetchGames().then((res) => res.json());
+  const gamesResponse = await fetchGames();
+  const gamesPayload = await gamesResponse.json().catch(() => []);
+  const games = Array.isArray(gamesPayload) ? gamesPayload : [];
   const gameCodes = (games || []).map((game) => game.code);
   const results = await Promise.all(
     gameCodes.map((code) =>
-      fetchTodayYesterdayResult(code).then((res) => res.json())
+      fetchTodayYesterdayResult(code)
+        .then((res) => res.json())
+        .catch(() => null)
     )
   );
   const gameNameMap = Object.fromEntries(
     (games || []).map((game) => [game.code, game.formal_name || game.code])
   );
-  const resultMap = Object.fromEntries(
-    results.map((row) => [row.game, row])
-  );
-  const todayResults = results.filter((row) => row?.today != null);
+  const safeResults = results.filter((row) => row && row.game);
+  const resultMap = Object.fromEntries(safeResults.map((row) => [row.game, row]));
+  const todayResults = safeResults.filter((row) => row?.today != null);
   const firstToday = todayResults[0];
   const secondToday = todayResults[1];
 
@@ -41,7 +44,10 @@ export default async function Home() {
     today: null,
     yesterday: null,
   };
-  const january = await fetch_result_by_month('', 2026, 1).then(data=>data.json())
+  const januaryResponse = await fetch_result_by_month("", 2026, 1);
+  const januaryPayload = await januaryResponse.json().catch(() => null);
+  const january =
+    januaryPayload && typeof januaryPayload === "object" ? januaryPayload : null;
   
   const data = [sg, gb, fd];
 

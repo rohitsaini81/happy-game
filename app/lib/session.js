@@ -9,7 +9,7 @@ export const getSessionUser = (cookieStore) => {
   }
 
   const payload = verifyJwt(token, jwtSecret);
-  if (!payload?.sub) {
+  if (!payload?.id) {
     return null;
   }
 

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { signJwt } from "@/app/lib/jwt";
+import { upsertGoogleUser, toSessionUser } from "@/app/lib/auth-user";
 
 export const runtime = "nodejs";
 
@@ -71,13 +72,22 @@ export async function GET(request) {
       { status: 500 }
     );
   }
+  if (!payload?.email) {
+    return NextResponse.json(
+      { error: "Google account email is required" },
+      { status: 500 }
+    );
+  }
+
+  const appUser = await upsertGoogleUser({
+    name: payload.name,
+    email: payload.email,
+    picture: payload.picture,
+  });
 
   const now = Math.floor(Date.now() / 1000);
   const user = {
-    sub: payload.sub,
-    email: payload.email,
-    name: payload.name,
-    picture: payload.picture,
+    ...toSessionUser(appUser),
     iat: now,
     exp: now + 60 * 60 * 24 * 7,
   };
@@ -92,13 +102,7 @@ export async function GET(request) {
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  cookieStore.set("admin_auth", "1", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  cookieStore.set("admin_auth", "", { path: "/", maxAge: 0 });
 
   return NextResponse.redirect(new URL("/profile", request.url));
 }

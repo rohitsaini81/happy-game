@@ -22,22 +22,22 @@ export default function LoginForm() {
       <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-xl shadow-rose-200/40 sm:p-7">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-rose-700">Login</h1>
-          <p className="mt-1 text-sm text-slate-600">Enter mobile number and password</p>
+          <p className="mt-1 text-sm text-slate-600">Enter email and password</p>
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-700">Mobile Number</label>
+            <label className="text-sm font-semibold text-slate-700">Email / Admin Username</label>
             <input
-              name="username"
-              autoComplete="tel"
-              inputMode="numeric"
-              placeholder="Type mobile number"
+              name="email"
+              autoComplete="username"
+              type="text"
+              placeholder="Type email"
             className="mt-1.5 w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
             />
-            {state?.fieldErrors?.username ? (
+            {state?.fieldErrors?.email ? (
               <p className="mt-1 text-xs text-red-600">
-                {state.fieldErrors.username}
+                {state.fieldErrors.email}
               </p>
             ) : null}
           </div>

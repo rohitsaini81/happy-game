@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useActionState } from "react";
 import { useState } from "react";
+import { signupAction } from "./actions";
+import initialState from "./state";
 
 export default function SignupForm() {
+  const [state, formAction] = useActionState(signupAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -22,16 +26,32 @@ export default function SignupForm() {
           <p className="mt-1 text-sm text-slate-600">Create a new account</p>
         </div>
 
-        <form className="flex flex-col gap-4">
+        <form action={formAction} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-700">Mobile Number</label>
+            <label className="text-sm font-semibold text-slate-700">Name</label>
             <input
-              name="mobile"
-              autoComplete="tel"
-              inputMode="numeric"
-              placeholder="Type mobile number"
+              name="name"
+              autoComplete="name"
+              placeholder="Type your name"
               className="mt-1.5 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             />
+            {state?.fieldErrors?.name ? (
+              <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-slate-700">Email</label>
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="Type email"
+              className="mt-1.5 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+            />
+            {state?.fieldErrors?.email ? (
+              <p className="mt-1 text-xs text-red-600">{state.fieldErrors.email}</p>
+            ) : null}
           </div>
 
           <div>
@@ -51,6 +71,9 @@ export default function SignupForm() {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+            {state?.fieldErrors?.password ? (
+              <p className="mt-1 text-xs text-red-600">{state.fieldErrors.password}</p>
+            ) : null}
           </div>
 
           <div>
@@ -70,6 +93,11 @@ export default function SignupForm() {
                 {showConfirmPassword ? "Hide" : "Show"}
               </button>
             </div>
+            {state?.fieldErrors?.confirm_password ? (
+              <p className="mt-1 text-xs text-red-600">
+                {state.fieldErrors.confirm_password}
+              </p>
+            ) : null}
           </div>
 
           <button
@@ -79,10 +107,19 @@ export default function SignupForm() {
             Create Account
           </button>
 
+          {state?.message ? (
+            <div
+              className={`text-sm ${state.ok ? "text-emerald-600" : "text-red-600"}`}
+            >
+              {state.message}
+            </div>
+          ) : null}
+
           <div className="my-1 border-t border-slate-200" />
 
           <button
             type="button"
+            onClick={() => window.location.assign("/api/auth/google")}
             className="rounded-lg border border-[#db4437] bg-[#db4437] py-2.5 text-sm font-semibold text-white transition hover:bg-[#c7372d]"
           >
             Continue with Google
