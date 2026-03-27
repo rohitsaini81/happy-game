@@ -40,6 +40,30 @@ export const findUserByEmail = async (email) => {
   return rows[0] || null;
 };
 
+export const findUserById = async (id) => {
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) return null;
+
+  const { rows } = await pool.query(
+    `
+      SELECT
+        id,
+        user_type_id,
+        name,
+        email,
+        profile_picture,
+        points,
+        is_active
+      FROM ${TABLE}
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [numericId]
+  );
+
+  return rows[0] || null;
+};
+
 export const createUserWithPassword = async ({ name, email, passwordHash }) => {
   const normalizedEmail = normalizeEmail(email);
 
