@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
-import { TOTAL_TILES, calculateMultiplier, getStakeSession } from "../store";
+import { TOTAL_TILES, calculateMultiplier, endStakeSession, getStakeSession } from "../store";
+import { requireActiveGameUser } from "../../_lib/user-points";
 
 export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
+    const auth = await requireActiveGameUser();
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status || 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const sessionId = String(body?.sessionId || "");
     const tileIndex = Number(body?.tileIndex);
@@ -21,6 +27,9 @@ export async function POST(request) {
     if (!session) {
       return NextResponse.json({ error: "Session expired or not found." }, { status: 404 });
     }
+    if (session.userId !== auth.user.id) {
+      return NextResponse.json({ error: "Forbidden session access." }, { status: 403 });
+    }
     if (session.status !== "active") {
       return NextResponse.json({ error: "Session is not active." }, { status: 409 });
     }
@@ -33,6 +42,7 @@ export async function POST(request) {
 
     if (isMine) {
       session.status = "lost";
+      endStakeSession(session.id);
       return NextResponse.json({
         isMine: true,
         mineIndexes: Array.from(session.mineIndexes),
@@ -51,4 +61,3 @@ export async function POST(request) {
     return NextResponse.json({ error: "Failed to reveal tile." }, { status: 500 });
   }
 }
-

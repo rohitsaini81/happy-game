@@ -39,12 +39,14 @@ const createMineIndexes = (minesCount) => {
   return mineIndexes;
 };
 
-export const createStakeSession = (minesCount) => {
+export const createStakeSession = ({ userId, minesCount, betAmount }) => {
   cleanupExpiredSessions();
 
   const sessionId = crypto.randomUUID();
   const session = {
     id: sessionId,
+    userId,
+    betAmount,
     minesCount,
     mineIndexes: createMineIndexes(minesCount),
     revealedIndexes: new Set(),
@@ -65,4 +67,3 @@ export const getStakeSession = (sessionId) => {
 export const endStakeSession = (sessionId) => {
   sessions.delete(sessionId);
 };
-

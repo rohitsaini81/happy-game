@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const GRID_SIDE = 5;
 const TOTAL_TILES = GRID_SIDE * GRID_SIDE;
@@ -42,7 +42,7 @@ export default function StakeGamePage() {
     { name: "Wheel" },
   ];
 
-  const [balance, setBalance] = useState(1000);
+  const [balance, setBalance] = useState(0);
   const [betInput, setBetInput] = useState("50");
   const [minesInput, setMinesInput] = useState("3");
   const [board, setBoard] = useState([]);
@@ -67,6 +67,24 @@ export default function StakeGamePage() {
     audio.play().catch(() => {});
   };
 
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        const response = await fetch("/api/games/wallet");
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !Number.isInteger(payload?.points)) {
+          setStatusText(payload?.error || "Unable to load wallet.");
+          return;
+        }
+        setBalance(payload.points);
+      } catch {
+        setStatusText("Unable to load wallet.");
+      }
+    };
+
+    loadWallet();
+  }, []);
+
   const minesCount = Number(minesInput);
   const multiplier = useMemo(
     () => calculateMultiplier(minesCount, safeReveals),
@@ -79,8 +97,8 @@ export default function StakeGamePage() {
     playAudio(clickAudioRef);
     const bet = Number(betInput);
 
-    if (!Number.isFinite(bet) || bet <= 0) {
-      setStatusText("Enter a valid bet amount.");
+    if (!Number.isInteger(bet) || bet <= 0) {
+      setStatusText("Enter a valid integer bet amount.");
       return;
     }
     if (!Number.isInteger(minesCount) || minesCount < 1 || minesCount > 24) {
@@ -96,7 +114,7 @@ export default function StakeGamePage() {
         const response = await fetch("/api/games/stake/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ minesCount }),
+          body: JSON.stringify({ minesCount, betAmount: bet }),
         });
         const payload = await response.json().catch(() => ({}));
 
@@ -105,8 +123,10 @@ export default function StakeGamePage() {
           return;
         }
 
-        setBalance((prev) => prev - bet);
-        setCurrentBet(bet);
+        if (Number.isInteger(payload?.points)) {
+          setBalance(payload.points);
+        }
+        setCurrentBet(Number(payload?.betAmount) || bet);
         setBoard(createEmptyBoard());
         setSessionId(payload.sessionId);
         setSafeReveals(0);
@@ -141,13 +161,15 @@ export default function StakeGamePage() {
           return;
         }
 
-        const payout = Number((currentBet * payload.multiplier).toFixed(2));
-        const profit = Number((payout - currentBet).toFixed(2));
-        setBalance((prev) => prev + payout);
+        const payout = Number(payload?.payout || 0);
+        const profit = payout - currentBet;
+        if (Number.isInteger(payload?.points)) {
+          setBalance(payload.points);
+        }
         setLastProfit(profit);
         setGameActive(false);
         setSessionId("");
-        setStatusText(`Cashed out ${payout.toFixed(2)} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}).`);
+        setStatusText(`Cashed out ${payout} (${profit >= 0 ? "+" : ""}${profit}).`);
         playAudio(finalWinAudioRef);
       } catch {
         setStatusText("Unable to cash out.");
@@ -243,7 +265,7 @@ export default function StakeGamePage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-[#0f212e] px-3 py-1.5 text-xs font-semibold text-slate-300">
-              Wallet: {balance.toFixed(2)}
+              Wallet: {balance}
             </span>
             <Link
               href="/playible-online-games"
@@ -360,7 +382,7 @@ export default function StakeGamePage() {
 
               <div className="mt-3 space-y-3 text-sm">
                 <p className="rounded-md bg-[#0f212e] px-3 py-2">
-                  Balance: <span className="font-semibold">{balance.toFixed(2)}</span>
+                  Balance: <span className="font-semibold">{balance}</span>
                 </p>
                 <label className="block">
                   <span className="mb-1 block text-slate-200">Bet Amount</span>
@@ -404,15 +426,15 @@ export default function StakeGamePage() {
                   disabled={!gameActive || safeReveals === 0 || revealingTileIndex !== null}
                   className="rounded-md bg-[#f9a825] px-4 py-2 font-semibold text-[#071824] hover:bg-[#fbbf24] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Cash Out {cashoutValue > 0 ? `(${cashoutValue.toFixed(2)})` : ""}
+                  Cash Out {cashoutValue > 0 ? `(${Math.floor(cashoutValue)})` : ""}
                 </button>
               </div>
 
               <div className="mt-4 rounded-md border border-[#2f4553] bg-[#0f212e] p-3 text-sm text-slate-200">
-                <p>Current Bet: {currentBet.toFixed(2)}</p>
+                <p>Current Bet: {currentBet}</p>
                 <p>Safe Picks: {safeReveals}</p>
                 <p>Multiplier: {multiplier.toFixed(2)}x</p>
-                <p>Profit: {lastProfit >= 0 ? "+" : ""}{lastProfit.toFixed(2)}</p>
+                <p>Profit: {lastProfit >= 0 ? "+" : ""}{lastProfit}</p>
                 <p className="mt-2 text-emerald-300">{statusText}</p>
               </div>
             </section>

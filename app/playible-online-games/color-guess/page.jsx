@@ -30,7 +30,7 @@ export default function ColorGuessGamePage() {
     { name: "Wheel" },
   ];
 
-  const [balance, setBalance] = useState(1000);
+  const [balance, setBalance] = useState(0);
   const [betInput, setBetInput] = useState("50");
   const [selectedColor, setSelectedColor] = useState(null);
   const [resultColor, setResultColor] = useState(null);
@@ -39,6 +39,24 @@ export default function ColorGuessGamePage() {
   const [countdown, setCountdown] = useState(0);
   const countdownIntervalRef = useRef(null);
   const revealTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        const response = await fetch("/api/games/wallet");
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !Number.isInteger(payload?.points)) {
+          setStatus(payload?.error || "Unable to load wallet.");
+          return;
+        }
+        setBalance(payload.points);
+      } catch {
+        setStatus("Unable to load wallet.");
+      }
+    };
+
+    loadWallet();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -55,8 +73,8 @@ export default function ColorGuessGamePage() {
     if (isRolling) return;
 
     const bet = Number(betInput);
-    if (!Number.isFinite(bet) || bet <= 0) {
-      setStatus("Enter a valid bet amount.");
+    if (!Number.isInteger(bet) || bet <= 0) {
+      setStatus("Enter a valid integer bet amount.");
       return;
     }
     if (!selectedColor) {
@@ -84,28 +102,31 @@ export default function ColorGuessGamePage() {
         try {
           const response = await fetch("/api/games/color-guess/resolve", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ betAmount: bet, selectedColor }),
           });
           const payload = await response.json().catch(() => ({}));
           const rolledColor = String(payload?.resultColor || "");
           const validColor = COLORS.some((item) => item.name === rolledColor);
 
           if (!response.ok || !validColor) {
-            setStatus("Failed to resolve round. Please try again.");
+            setStatus(payload?.error || "Failed to resolve round. Please try again.");
             return;
           }
 
           setResultColor(rolledColor);
+          if (Number.isInteger(payload?.points)) {
+            setBalance(payload.points);
+          }
 
-          if (rolledColor === selectedColor) {
+          if (payload?.won) {
             const payout = bet * 9;
             const profit = payout - bet;
-            setBalance((prev) => prev + profit);
-            setStatus(`${rolledColor} hit! You won ${profit.toFixed(2)}.`);
+            setStatus(`${rolledColor} hit! You won ${profit}.`);
             return;
           }
 
-          setBalance((prev) => prev - bet);
-          setStatus(`${rolledColor} came out. You lost ${bet.toFixed(2)}.`);
+          setStatus(`${rolledColor} came out. You lost ${bet}.`);
         } catch {
           setStatus("Failed to resolve round. Please try again.");
         } finally {
@@ -132,7 +153,7 @@ export default function ColorGuessGamePage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-[#0f212e] px-3 py-1.5 text-xs font-semibold text-slate-300">
-              Wallet: {balance.toFixed(2)}
+              Wallet: {balance}
             </span>
             <Link href="/playible-online-games" className="rounded-md bg-[#2f4553] px-3 py-1.5 text-sm font-semibold hover:bg-[#3e5664]">
               Games
@@ -195,13 +216,14 @@ export default function ColorGuessGamePage() {
               <h2 className="text-lg font-semibold text-white">Bet Panel</h2>
               <div className="mt-3 space-y-3 text-sm">
                 <p className="rounded-md bg-[#0f212e] px-3 py-2">
-                  Balance: <span className="font-semibold">{balance.toFixed(2)}</span>
+                  Balance: <span className="font-semibold">{balance}</span>
                 </p>
                 <label className="block">
                   <span className="mb-1 block text-slate-200">Bet Amount</span>
                   <input
                     type="number"
                     min="1"
+                    step="1"
                     value={betInput}
                     onChange={(e) => setBetInput(e.target.value)}
                     disabled={isRolling}
