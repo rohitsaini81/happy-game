@@ -48,6 +48,10 @@ export default async function Home() {
   const januaryPayload = await januaryResponse.json().catch(() => null);
   const january =
     januaryPayload && typeof januaryPayload === "object" ? januaryPayload : null;
+  const calendarData =
+    january && Array.isArray(january.columns) && Array.isArray(january.rows)
+      ? january
+      : december2025;
   
   const data = [sg, gb, fd];
 
@@ -106,7 +110,7 @@ export default async function Home() {
           </div>
         ))}
       </div>
-      <CalendarChart data={january || december2025} />;
+      <CalendarChart data={calendarData} />;
       <a
         href="https://wa.me/8199889776"
         target="_blank"
@@ -349,8 +353,10 @@ export function HeroSection({
 
 
 export function CalendarChart({ data }) {
-  const chartData = data
-  console.log(chartData)
+  const chartData =
+    data && Array.isArray(data.columns) && Array.isArray(data.rows)
+      ? data
+      : december2025;
 
   return (
     <section className="w-full bg-slate-100 px-3 py-6">

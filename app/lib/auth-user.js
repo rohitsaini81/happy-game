@@ -19,25 +19,52 @@ export const findUserByEmail = async (email) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return null;
 
-  const { rows } = await pool.query(
-    `
-      SELECT
-        id,
-        user_type_id,
-        name,
-        email,
-        password_hash,
-        profile_picture,
-        points,
-        is_active
-      FROM ${TABLE}
-      WHERE email = $1
-      LIMIT 1
-    `,
-    [normalizedEmail]
-  );
+  try {
+    const { rows } = await pool.query(
+      `
+        SELECT
+          id,
+          user_type_id,
+          name,
+          email,
+          password_hash,
+          profile_picture,
+          points,
+          is_active
+        FROM ${TABLE}
+        WHERE email = $1
+        LIMIT 1
+      `,
+      [normalizedEmail]
+    );
 
-  return rows[0] || null;
+    return rows[0] || null;
+  } catch (error) {
+    // Backward compatibility for older schemas that do not have `is_active`.
+    if (error?.code === "42703") {
+      const { rows } = await pool.query(
+        `
+          SELECT
+            id,
+            user_type_id,
+            name,
+            email,
+            password_hash,
+            profile_picture,
+            points
+          FROM ${TABLE}
+          WHERE email = $1
+          LIMIT 1
+        `,
+        [normalizedEmail]
+      );
+
+      if (!rows[0]) return null;
+      return { ...rows[0], is_active: true };
+    }
+
+    throw error;
+  }
 };
 
 export const findUserById = async (id) => {

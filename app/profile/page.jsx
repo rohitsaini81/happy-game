@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/app/lib/session";
 import { findUserById } from "@/app/lib/auth-user";
@@ -69,6 +70,12 @@ export default async function ProfilePage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+          >
+            Home
+          </Link>
           <form action={logoutAction}>
             <button
               type="submit"

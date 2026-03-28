@@ -84,7 +84,11 @@ export async function loginAction(_prevState, formData) {
     cookieStore.set("admin_auth", "", { path: "/", maxAge: 0 });
 
     redirect("/profile");
-  } catch {
+  } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("loginAction failed:", error);
     return {
       ...initialState,
       ok: false,
