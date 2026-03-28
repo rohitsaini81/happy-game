@@ -66,25 +66,44 @@ export default function NumberGuessGamePage() {
     }, 1000);
 
     revealTimeoutRef.current = setTimeout(() => {
+      const settleRound = async () => {
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
       }
-      const roll = Math.floor(Math.random() * 10) + 1;
-      setResultNumber(roll);
-      setResultHistory((prev) => [roll, ...prev].slice(0, 20));
-      setIsRolling(false);
-      setCountdown(0);
+        try {
+          const response = await fetch("/api/games/number-guess/resolve", {
+            method: "POST",
+          });
+          const payload = await response.json().catch(() => ({}));
+          const roll = Number(payload?.resultNumber);
 
-      if (roll === selectedNumber) {
-        const payout = bet * 9;
-        const profit = payout - bet;
-        setBalance((prev) => prev + profit);
-        setStatus(`Exact hit ${roll}! You won ${profit.toFixed(2)}.`);
-        return;
-      }
+          if (!response.ok || !Number.isInteger(roll) || roll < 1 || roll > 10) {
+            setStatus("Failed to resolve round. Please try again.");
+            return;
+          }
 
-      setBalance((prev) => prev - bet);
-      setStatus(`Result number ${roll}. You lost ${bet.toFixed(2)}.`);
+          setResultNumber(roll);
+          setResultHistory((prev) => [roll, ...prev].slice(0, 20));
+
+          if (roll === selectedNumber) {
+            const payout = bet * 9;
+            const profit = payout - bet;
+            setBalance((prev) => prev + profit);
+            setStatus(`Exact hit ${roll}! You won ${profit.toFixed(2)}.`);
+            return;
+          }
+
+          setBalance((prev) => prev - bet);
+          setStatus(`Result number ${roll}. You lost ${bet.toFixed(2)}.`);
+        } catch {
+          setStatus("Failed to resolve round. Please try again.");
+        } finally {
+          setIsRolling(false);
+          setCountdown(0);
+        }
+      };
+
+      settleRound();
     }, 5000);
   };
 

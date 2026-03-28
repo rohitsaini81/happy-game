@@ -9,15 +9,10 @@ const TOTAL_TILES = GRID_SIDE * GRID_SIDE;
 const HOUSE_EDGE = 0.97;
 const REVEAL_STEP_MS = 180;
 
-function createBoard(minesCount) {
-  const mineIndexes = new Set();
-  while (mineIndexes.size < minesCount) {
-    mineIndexes.add(Math.floor(Math.random() * TOTAL_TILES));
-  }
-
+function createEmptyBoard() {
   return Array.from({ length: TOTAL_TILES }, (_, index) => ({
     index,
-    isMine: mineIndexes.has(index),
+    isMine: false,
     revealed: false,
   }));
 }
@@ -51,6 +46,7 @@ export default function StakeGamePage() {
   const [betInput, setBetInput] = useState("50");
   const [minesInput, setMinesInput] = useState("3");
   const [board, setBoard] = useState([]);
+  const [sessionId, setSessionId] = useState("");
   const [gameActive, setGameActive] = useState(false);
   const [safeReveals, setSafeReveals] = useState(0);
   const [statusText, setStatusText] = useState("Set bet and mines, then start.");
@@ -78,10 +74,8 @@ export default function StakeGamePage() {
   );
   const cashoutValue = currentBet > 0 ? currentBet * multiplier : 0;
 
-  const revealAllMines = (nextBoard) =>
-    nextBoard.map((tile) => (tile.isMine ? { ...tile, revealed: true } : tile));
-
   const startRound = () => {
+    const start = async () => {
     playAudio(clickAudioRef);
     const bet = Number(betInput);
 
@@ -98,32 +92,73 @@ export default function StakeGamePage() {
       return;
     }
 
-    setBalance((prev) => prev - bet);
-    setCurrentBet(bet);
-    setBoard(createBoard(minesCount));
-    setSafeReveals(0);
-    setLastProfit(0);
-    setRevealingTileIndex(null);
-    setRevealStage(0);
-    setGameActive(true);
-    setStatusText("Round started. Pick a tile or cash out anytime.");
+      try {
+        const response = await fetch("/api/games/stake/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ minesCount }),
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok || !payload?.sessionId) {
+          setStatusText(payload?.error || "Unable to start round.");
+          return;
+        }
+
+        setBalance((prev) => prev - bet);
+        setCurrentBet(bet);
+        setBoard(createEmptyBoard());
+        setSessionId(payload.sessionId);
+        setSafeReveals(0);
+        setLastProfit(0);
+        setRevealingTileIndex(null);
+        setRevealStage(0);
+        setGameActive(true);
+        setStatusText("Round started. Pick a tile or cash out anytime.");
+      } catch {
+        setStatusText("Unable to start round.");
+      }
+    };
+
+    start();
   };
 
   const cashOut = () => {
-    if (!gameActive || safeReveals <= 0 || revealingTileIndex !== null) return;
-    playAudio(clickAudioRef);
+    const cashout = async () => {
+      if (!gameActive || safeReveals <= 0 || revealingTileIndex !== null || !sessionId) return;
+      playAudio(clickAudioRef);
 
-    const payout = Number(cashoutValue.toFixed(2));
-    const profit = Number((payout - currentBet).toFixed(2));
-    setBalance((prev) => prev + payout);
-    setLastProfit(profit);
-    setGameActive(false);
-    setStatusText(`Cashed out ${payout.toFixed(2)} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}).`);
-    playAudio(finalWinAudioRef);
+      try {
+        const response = await fetch("/api/games/stake/cashout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok || typeof payload?.multiplier !== "number") {
+          setStatusText(payload?.error || "Unable to cash out.");
+          return;
+        }
+
+        const payout = Number((currentBet * payload.multiplier).toFixed(2));
+        const profit = Number((payout - currentBet).toFixed(2));
+        setBalance((prev) => prev + payout);
+        setLastProfit(profit);
+        setGameActive(false);
+        setSessionId("");
+        setStatusText(`Cashed out ${payout.toFixed(2)} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}).`);
+        playAudio(finalWinAudioRef);
+      } catch {
+        setStatusText("Unable to cash out.");
+      }
+    };
+
+    cashout();
   };
 
   const onTileClick = async (tileIndex) => {
-    if (!gameActive || revealingTileIndex !== null) return;
+    if (!gameActive || revealingTileIndex !== null || !sessionId) return;
 
     const clickedTile = board[tileIndex];
     if (!clickedTile || clickedTile.revealed) return;
@@ -137,30 +172,48 @@ export default function StakeGamePage() {
     setRevealStage(0);
     setRevealingTileIndex(null);
 
-    if (clickedTile.isMine) {
-      const explodedBoard = board.map((tile) =>
-        tile.index === tileIndex ? { ...tile, revealed: true } : tile
+    try {
+      const response = await fetch("/api/games/stake/reveal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, tileIndex }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setStatusText(payload?.error || "Unable to reveal tile.");
+        return;
+      }
+
+      if (payload?.isMine) {
+        const mineIndexes = new Set(Array.isArray(payload?.mineIndexes) ? payload.mineIndexes : []);
+        const explodedBoard = board.map((tile) => ({
+          ...tile,
+          revealed: tile.index === tileIndex || mineIndexes.has(tile.index),
+          isMine: mineIndexes.has(tile.index),
+        }));
+        setBoard(explodedBoard);
+        setGameActive(false);
+        setSessionId("");
+        setLastProfit(-currentBet);
+        setStatusText("Boom. You hit a mine and lost this bet.");
+        playAudio(bombAudioRef);
+        return;
+      }
+
+      const nextSafeCount = Number(payload?.safeReveals || safeReveals + 1);
+      const nextMultiplier = Number(payload?.multiplier || calculateMultiplier(minesCount, nextSafeCount));
+      const updatedBoard = board.map((tile) =>
+        tile.index === tileIndex ? { ...tile, revealed: true, isMine: false } : tile
       );
-      setBoard(revealAllMines(explodedBoard));
-      setGameActive(false);
-      setLastProfit(-currentBet);
-      setStatusText("Boom. You hit a mine and lost this bet.");
-      playAudio(bombAudioRef);
-      return;
+
+      setBoard(updatedBoard);
+      setSafeReveals(nextSafeCount);
+      setStatusText(`Safe pick ${nextSafeCount}. Multiplier ${nextMultiplier.toFixed(2)}x`);
+      playAudio(winAudioRef);
+    } catch {
+      setStatusText("Unable to reveal tile.");
     }
-
-    const updatedBoard = board.map((tile) =>
-      tile.index === tileIndex ? { ...tile, revealed: true } : tile
-    );
-    const nextSafeCount = safeReveals + 1;
-    const nextMultiplier = calculateMultiplier(minesCount, nextSafeCount);
-
-    setBoard(updatedBoard);
-    setSafeReveals(nextSafeCount);
-    setStatusText(
-      `Safe pick ${nextSafeCount}. Multiplier ${nextMultiplier.toFixed(2)}x`
-    );
-    playAudio(winAudioRef);
   };
 
   return (

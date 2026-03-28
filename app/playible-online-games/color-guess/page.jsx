@@ -77,25 +77,44 @@ export default function ColorGuessGamePage() {
     }, 1000);
 
     revealTimeoutRef.current = setTimeout(() => {
+      const settleRound = async () => {
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
       }
-      const rolledColor =
-        COLORS[Math.floor(Math.random() * COLORS.length)].name;
-      setResultColor(rolledColor);
-      setIsRolling(false);
-      setCountdown(0);
+        try {
+          const response = await fetch("/api/games/color-guess/resolve", {
+            method: "POST",
+          });
+          const payload = await response.json().catch(() => ({}));
+          const rolledColor = String(payload?.resultColor || "");
+          const validColor = COLORS.some((item) => item.name === rolledColor);
 
-      if (rolledColor === selectedColor) {
-        const payout = bet * 9;
-        const profit = payout - bet;
-        setBalance((prev) => prev + profit);
-        setStatus(`${rolledColor} hit! You won ${profit.toFixed(2)}.`);
-        return;
-      }
+          if (!response.ok || !validColor) {
+            setStatus("Failed to resolve round. Please try again.");
+            return;
+          }
 
-      setBalance((prev) => prev - bet);
-      setStatus(`${rolledColor} came out. You lost ${bet.toFixed(2)}.`);
+          setResultColor(rolledColor);
+
+          if (rolledColor === selectedColor) {
+            const payout = bet * 9;
+            const profit = payout - bet;
+            setBalance((prev) => prev + profit);
+            setStatus(`${rolledColor} hit! You won ${profit.toFixed(2)}.`);
+            return;
+          }
+
+          setBalance((prev) => prev - bet);
+          setStatus(`${rolledColor} came out. You lost ${bet.toFixed(2)}.`);
+        } catch {
+          setStatus("Failed to resolve round. Please try again.");
+        } finally {
+          setIsRolling(false);
+          setCountdown(0);
+        }
+      };
+
+      settleRound();
     }, 5000);
   };
 
