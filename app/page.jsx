@@ -3,11 +3,21 @@ import Link from "next/link";
 import SignInPopup from "./components/signin-popup";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/app/lib/session";
+import { findUserById } from "@/app/lib/auth-user";
 
 export default async function Home() {
   const cookieStore = await cookies();
   const sessionUser = getSessionUser(cookieStore);
   const isLoggedIn = Boolean(sessionUser);
+  const dbUser = sessionUser?.id ? await findUserById(sessionUser.id).catch(() => null) : null;
+  const heroSessionUser = sessionUser
+    ? {
+        ...sessionUser,
+        name: dbUser?.name || sessionUser.name,
+        email: dbUser?.email || sessionUser.email,
+        picture: sessionUser.picture || dbUser?.profile_picture || null,
+      }
+    : null;
 
   const gamesResponse = await fetchGames();
   const gamesPayload = await gamesResponse.json().catch(() => []);
@@ -64,7 +74,7 @@ export default async function Home() {
           secondToday?.game ? gameNameMap[secondToday.game] : "GHAZIABAD"
         }
         secondGameValue={secondToday?.today ?? "WAIT"}
-        sessionUser={sessionUser}
+        sessionUser={heroSessionUser}
       />
       {/* Header */}
       <div className="w-full max-w-3xl text-center mb-6">
@@ -188,9 +198,18 @@ export function HeroSection({
               aria-label="Go to profile"
               className="flex w-full shrink-0 items-center justify-center sm:w-auto"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 text-sm font-bold text-white shadow-md ring-2 ring-white/80 transition hover:scale-105">
-                {(sessionUser.name || sessionUser.email || "U").charAt(0).toUpperCase()}
-              </span>
+              {sessionUser.picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={sessionUser.picture}
+                  alt={sessionUser.name || "Profile"}
+                  className="h-10 w-10 rounded-full border-2 border-white/80 object-cover shadow-md transition hover:scale-105"
+                />
+              ) : (
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 text-sm font-bold text-white shadow-md ring-2 ring-white/80 transition hover:scale-105">
+                  {(sessionUser.name || sessionUser.email || "U").charAt(0).toUpperCase()}
+                </span>
+              )}
             </Link>
           ) : (
             <Link
