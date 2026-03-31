@@ -1,0 +1,10 @@
+test_gui/
+__pycache__/
+lib/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.git/
+.gitignore
